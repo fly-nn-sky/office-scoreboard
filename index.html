@@ -108,6 +108,14 @@ tbody tr:last-child td{border-bottom:0}
 .tc .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .tc .h{font-size:11px;color:var(--muted);display:block;font-weight:400}
 .num{font-variant-numeric:tabular-nums}
+.pos{color:var(--win)}.neg{color:var(--loss)}
+.stk{font-family:var(--cond);font-weight:700;font-size:14px}
+.stk.W{color:var(--win)}.stk.L{color:var(--loss)}
+th[data-tip]{position:relative;cursor:help}
+th[data-tip] span.lbl{text-decoration:underline dotted var(--line-2);text-underline-offset:3px}
+th[data-tip]::after{content:attr(data-tip);position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);width:200px;background:var(--card-2);border:1px solid var(--line-2);color:var(--ink);font-size:11px;font-weight:400;line-height:1.45;letter-spacing:0;text-align:left;white-space:normal;padding:8px 10px;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;visibility:hidden;transition:opacity .12s ease;z-index:30;pointer-events:none}
+th.r[data-tip]::after{left:auto;right:0;transform:none}
+th[data-tip]:hover::after,th[data-tip]:focus-visible::after{opacity:1;visibility:visible}
 .dim{color:var(--muted)}
 
 /* ---- moves ---- */
@@ -170,6 +178,8 @@ tbody tr:last-child td{border-bottom:0}
 .stud .pp{margin-left:auto;font-family:var(--cond);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
 .stud .who{min-width:0}
 .combined{margin-top:16px;padding-top:24px;border-top:1px solid var(--line-2)}
+.combined .card{overflow-x:auto}
+.combined table{min-width:640px}
 .combined h2{font-family:var(--cond);font-size:28px;font-weight:700;margin:0 0 4px}
 .combined p{color:var(--muted);font-size:14px;margin:0 0 16px}
 .sched td{padding:8px 10px}
@@ -186,6 +196,8 @@ tbody tr:last-child td{border-bottom:0}
 @media (max-width:640px){
   .h2h .nm{font-size:22px}.h2h .sc{font-size:32px}.h2h img{width:40px;height:40px}
   .pagehead h2{font-size:30px}.stats{margin-left:0}
+  .wrap{padding:0 14px 60px}
+  .card{overflow-x:auto}
 }
 footer{margin-top:44px;font-size:12px;color:var(--faint)}
 </style>
@@ -352,7 +364,7 @@ function render(){
   var v=$("view");
   if(r.page==="matchup")v.innerHTML=pageMatchup(r.a,r.b);
   else if(r.page==="team")pageTeam(r.a,r.b);
-  else v.innerHTML=pageHome();
+  else{v.innerHTML=pageHome();fillStreaks()}
   $("wkNum").textContent="Week "+S.week;
   $("prevWk").disabled=S.week<=1;$("nextWk").disabled=S.week>=18;
   var isLive=["a","b"].some(function(k){return S.L[k]&&S.L[k].games.some(live)});
@@ -413,8 +425,8 @@ function combined(){
   ["a","b"].forEach(function(k){S.L[k].ranked.forEach(function(t){all.push({t:t,C:S.L[k]})})});
   var played=all.some(function(r){return r.t.wins+r.t.losses+r.t.ties>0});
   all.sort(function(x,y){if(played&&y.t.wins!==x.t.wins)return y.t.wins-x.t.wins;return y.t.pf-x.t.pf});
-  var h='<div class="combined"><h2>Whole office, one table</h2><p>'+(played?"Both leagues ranked together. Record first, then points.":"Both leagues in one list. It sorts itself out once games start.")+'</p><div class="card"><table><thead><tr><th></th><th>Team</th><th></th><th class="r">Rec</th><th class="r">PF</th><th class="r">PA</th></tr></thead><tbody>';
-  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(r.t.avatar)+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r num">'+fx(r.t.pf)+'</td><td class="r num dim">'+fx(r.t.pa)+'</td></tr>'});
+  var h='<div class="combined"><h2>Whole office, one table</h2><p>'+(played?"Both leagues ranked together. Record first, then points.":"Both leagues in one list. It sorts itself out once games start.")+'</p><div class="card"><table><thead><tr><th data-tip="Overall rank across both leagues, by record then points."><span class="lbl">#</span></th><th data-tip="Team name, with the manager&#39;s Sleeper handle beneath."><span class="lbl">Team</span></th><th data-tip="Which league the team plays in."><span class="lbl">League</span></th><th class="r" data-tip="Wins–losses–ties so far this season."><span class="lbl">Rec</span></th><th class="r" data-tip="Current run of consecutive results. W3 means three straight wins."><span class="lbl">Streak</span></th><th class="r" data-tip="Points For — total points this team has scored."><span class="lbl">PF</span></th><th class="r" data-tip="Points Against — total points their opponents scored on them."><span class="lbl">PA</span></th><th class="r" data-tip="Points For minus Points Against. Positive means they outscore their opponents."><span class="lbl">Diff</span></th><th class="r" data-tip="Lineup efficiency: points scored as a share of the most their roster could have scored. Measures the manager, not the players."><span class="lbl">Eff</span></th><th class="r" data-tip="Adds, drops and trades made this season."><span class="lbl">Moves</span></th></tr></thead><tbody>';
+  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(r.t.avatar)+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r" data-stk="'+r.C.cfg.key+':'+r.t.id+'"><span class="dim">…</span></td><td class="r num">'+fx(r.t.pf)+'</td><td class="r num dim">'+fx(r.t.pa)+'</td><td class="r num '+(r.t.pf-r.t.pa>0?"pos":r.t.pf-r.t.pa<0?"neg":"dim")+'">'+(r.t.pa>0?(r.t.pf-r.t.pa>0?"+":"")+fx(r.t.pf-r.t.pa):'<span class="dim">—</span>')+'</td><td class="r num dim">'+(r.t.pp>0?Math.round(r.t.pf/r.t.pp*100)+"%":"—")+'</td><td class="r num dim">'+(r.t.moves||0)+'</td></tr>'});
   return h+'</tbody></table></div></div>';
 }
 
@@ -475,6 +487,33 @@ function roster(C,t,cur){
   return h;
 }
 function pRow(p,slot,v,dim){return '<div class="pl">'+img(pImg(p))+'<div class="who"><div class="pn">'+esc(pName(p))+'</div><div class="pm">'+pMeta(p)+'</div></div><span class="pos-'+esc(slot)+'" style="font-family:var(--cond);font-weight:700;font-size:12px;color:var(--faint);margin-left:auto">'+esc(slot)+'</span>'+(v==null?"":'<div class="pp '+(dim?"dim":"")+'" style="margin-left:14px;min-width:52px;text-align:right">'+fx(v)+'</div>')+'</div>'}
+function streakOf(C,t){
+  var end=(C.league.settings&&C.league.settings.playoff_week_start)||15,k=C.cfg.key,res=[];
+  for(var w=1;w<end;w++){
+    var rows=S.sched[k][w]||[],me=rows.filter(function(m){return String(m.roster_id)===String(t.id)})[0];
+    if(!me)continue;
+    var op=rows.filter(function(m){return m.matchup_id===me.matchup_id&&m.roster_id!==me.roster_id})[0];
+    if(!op)continue;
+    if(!((me.points||0)+(op.points||0)>0&&w<S.liveWeek))continue;
+    res.push(me.points>op.points?"W":me.points<op.points?"L":"T");
+  }
+  if(!res.length)return '<span class="dim">—</span>';
+  var last=res[res.length-1],n=0;
+  for(var i=res.length-1;i>=0&&res[i]===last;i--)n++;
+  return '<span class="stk '+last+'">'+last+n+'</span>';
+}
+function fillStreaks(){
+  var els=document.querySelectorAll("[data-stk]");
+  if(!els.length)return;
+  Promise.all([loadSchedule(S.L.a),loadSchedule(S.L.b)]).then(function(){
+    document.querySelectorAll("[data-stk]").forEach(function(el){
+      var q=el.getAttribute("data-stk").split(":"),C=S.L[q[0]],t=C&&C.teams[q[1]];
+      if(t)el.innerHTML=streakOf(C,t);
+    });
+  }).catch(function(){
+    document.querySelectorAll("[data-stk]").forEach(function(el){el.innerHTML='<span class="dim">—</span>'});
+  });
+}
 function loadSchedule(C){
   var end=(C.league.settings&&C.league.settings.playoff_week_start)||15,id=C.league.league_id,k=C.cfg.key,jobs=[];
   for(var w=1;w<end;w++)(function(w){if(!S.sched[k][w])jobs.push(api("/league/"+id+"/matchups/"+w).then(function(r){S.sched[k][w]=r||[]}))})(w);
