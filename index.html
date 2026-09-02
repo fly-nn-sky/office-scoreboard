@@ -374,7 +374,6 @@ function column(C){
   else C.games.forEach(function(g){h+=gameCard(C,g,false)});
   h+='</div>';
   h+='<div class="sec"><h3>Standings<span>click a team</span></h3><div class="card">'+standings(C)+'</div></div>';
-  h+='<div class="sec"><h3>Recent moves</h3><div class="card">'+moves(C)+'</div></div>';
   return h+'</div>';
 }
 function leagueMeta(C){
@@ -409,33 +408,14 @@ function standings(C){
   });
   return h+'</tbody></table>';
 }
-function moves(C){
-  var mv=C.moves.filter(function(m){return m.status==="complete"}).sort(function(a,b){return(b.status_updated||0)-(a.status_updated||0)}).slice(0,7);
-  if(!mv.length)return '<div class="note" style="border:0">Nothing yet. Adds, drops and trades land here.</div>';
-  var h="";
-  mv.forEach(function(m){
-    var parts=[];
-    Object.keys(m.adds||{}).forEach(function(p){var t=C.teams[m.adds[p]];parts.push('<span class="add">+ '+esc(pName(p))+'</span> → '+esc(t?t.name:"?"))});
-    Object.keys(m.drops||{}).forEach(function(p){var t=C.teams[m.drops[p]];parts.push('<span class="drop">'+esc(pName(p))+'</span> from '+esc(t?t.name:"?"))});
-    if(!parts.length&&m.draft_picks&&m.draft_picks.length)parts.push(m.draft_picks.length+" draft picks swapped");
-    h+='<div class="mv"><div class="k '+(m.type==="trade"?"trade":"")+'">'+esc(m.type==="free_agent"?"free agent":m.type)+'</div><div>'+parts.join(" &nbsp;·&nbsp; ")+'</div></div>';
-  });
-  return h;
-}
 function combined(){
   var all=[];
   ["a","b"].forEach(function(k){S.L[k].ranked.forEach(function(t){all.push({t:t,C:S.L[k]})})});
   var played=all.some(function(r){return r.t.wins+r.t.losses+r.t.ties>0});
   all.sort(function(x,y){if(played&&y.t.wins!==x.t.wins)return y.t.wins-x.t.wins;return y.t.pf-x.t.pf});
-  var h='<div class="combined"><h2>Whole office, one table</h2><p>'+(played?"Both leagues ranked together. Record first, then points.":"Both leagues in one list. It sorts itself out once games start.")+'</p><div class="split"><div class="card"><table><thead><tr><th></th><th>Team</th><th></th><th class="r">Rec</th><th class="r">PF</th></tr></thead><tbody>';
-  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(r.t.avatar)+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r num">'+fx(r.t.pf)+'</td></tr>'});
-  h+='</tbody></table></div><div><h3 style="font-size:13px;font-weight:600;color:var(--muted);margin:0 0 8px">Best starters this week</h3>';
-  var st=[];
-  ["a","b"].forEach(function(k){S.L[k].games.forEach(function(g){g.sides.forEach(function(s){s.starters.forEach(function(p,i){var v=s.sp[i];if(!p||p==="0"||!v)return;st.push({p:p,v:v,t:s.team,C:S.L[k]})})})})});
-  st.sort(function(a,b){return b.v-a.v});st=st.slice(0,8);
-  if(!st.length)h+='<div class="note">Player scores show up here once games kick off.</div>';
-  else{h+='<div class="studs">';st.forEach(function(s){h+='<div class="stud '+s.C.cfg.cls+'">'+img(pImg(s.p))+'<div class="who"><div class="pn">'+esc(pName(s.p))+'</div><div class="pm">'+pMeta(s.p)+' · <a href="#/team/'+s.C.cfg.key+'/'+s.t.id+'">'+esc(s.t.name)+'</a></div></div><div class="pp">'+fx(s.v)+'</div></div>'});h+='</div>'}
-  return h+'</div></div></div>';
+  var h='<div class="combined"><h2>Whole office, one table</h2><p>'+(played?"Both leagues ranked together. Record first, then points.":"Both leagues in one list. It sorts itself out once games start.")+'</p><div class="card"><table><thead><tr><th></th><th>Team</th><th></th><th class="r">Rec</th><th class="r">PF</th><th class="r">PA</th></tr></thead><tbody>';
+  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(r.t.avatar)+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r num">'+fx(r.t.pf)+'</td><td class="r num dim">'+fx(r.t.pa)+'</td></tr>'});
+  return h+'</tbody></table></div></div>';
 }
 
 
