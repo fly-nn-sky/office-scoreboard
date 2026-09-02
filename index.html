@@ -91,6 +91,13 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .bar{height:3px;background:#0c1a15;border-radius:2px;margin:6px 0 2px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--acc)}
 .game.live .bar i{background:var(--live)}
+.bar.wbar{display:flex;gap:2px;background:transparent}
+.bar.wbar i{background:var(--line-2);transition:width .35s ease;border-radius:2px}
+.bar.wbar i.fav{background:var(--win)}
+.bar.wbar i.dog{background:var(--loss)}
+.wp{font-weight:700;font-variant-numeric:tabular-nums}
+.wp.fav{color:var(--win)}
+.wp.dog{color:var(--loss)}
 .gfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px}
 .gfoot.odds{margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
 .gfoot.odds b{color:var(--acc);font-weight:600}
@@ -406,15 +413,17 @@ function emptyMsg(C){
 }
 function gameCard(C,g,big){
   var a=g.sides[0],b=g.sides[1],t=tot(g),sh=t>0?a.pts/t*100:50,lv=live(g);
+  var pre=!t&&b,key=C.cfg.key+":"+g.id;
   var h='<a class="game '+C.cfg.cls+(lv?" live":"")+(big?" big":"")+'" href="#/matchup/'+C.cfg.key+'/'+esc(g.id)+'">';
-  h+=sideRow(a,t>0&&b&&a.pts<b.pts?"lose":"");
-  h+='<div class="bar"><i style="width:'+sh.toFixed(1)+'%"></i></div>';
-  if(b)h+=sideRow(b,t>0&&b.pts<a.pts?"lose":"");
-  if(!t&&b)h+='<div class="gfoot odds" data-odds="'+C.cfg.key+':'+esc(g.id)+'"></div>';
+  h+=sideRow(a,t>0&&b&&a.pts<b.pts?"lose":"",pre?esc(key)+":0":null);
+  if(pre)h+='<div class="bar wbar" data-bar="'+esc(key)+'"><i style="width:50%"></i><i style="width:50%"></i></div>';
+  else h+='<div class="bar"><i style="width:'+sh.toFixed(1)+'%"></i></div>';
+  if(b)h+=sideRow(b,t>0&&b.pts<a.pts?"lose":"",pre?esc(key)+":1":null);
+  if(pre)h+='<div class="gfoot odds" data-odds="'+esc(key)+'"></div>';
   if(t>0&&b)h+='<div class="gfoot"><span>'+esc(a.team.name)+' leads by '+fx(a.pts-b.pts)+'</span><span>'+fx(t)+' combined</span></div>';
   return h+'</a>';
 }
-function sideRow(s,cls){var t=s.team;return '<div class="side '+cls+'">'+img(t.avatar)+'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="rc">'+esc(t.handle)+' · '+rec(t)+'</div></div><div class="pt">'+fx(s.pts)+'</div></div>'}
+function sideRow(s,cls,wp){var t=s.team;return '<div class="side '+cls+'">'+img(t.avatar)+'<div class="who"><div class="nm">'+esc(t.name)+'</div><div class="rc">'+esc(t.handle)+' · '+rec(t)+(wp?' · <span class="wp" data-wp="'+wp+'">–</span>':"")+'</div></div><div class="pt">'+fx(s.pts)+'</div></div>'}
 function standings(C){
   if(!C.ranked.length)return '<div class="note" style="border:0">No rosters yet.</div>';
   var eff=C.ranked.some(function(t){return t.pp>0});
@@ -516,16 +525,24 @@ function fillOdds(){
   if(!document.querySelector("[data-odds]"))return;
   loadProj(S.week).then(function(){
     document.querySelectorAll("[data-odds]").forEach(function(el){
-      var q=el.getAttribute("data-odds").split(":"),C=S.L[q[0]];
+      var key=el.getAttribute("data-odds"),q=key.split(":"),C=S.L[q[0]];
       if(!C)return;
       var g=C.games.filter(function(x){return String(x.id)===q[1]})[0];
       if(!g||!g.sides[1])return;
       var f=scoreField(C),pa=projTotal(g.sides[0],f),pb=projTotal(g.sides[1],f);
       if(!(pa>0&&pb>0))return;
-      var pr=ncdf((pa-pb)/MARGIN_SD),fav=pr>=0.5?g.sides[0]:g.sides[1];
-      var pct=Math.round((pr>=0.5?pr:1-pr)*100);
-      el.innerHTML='<span><b>'+esc(fav.team.name)+'</b> '+pct+'% to win</span>'
-                  +'<span class="pc">proj '+fx(pa)+' – '+fx(pb)+'</span>';
+      var pctA=Math.round(ncdf((pa-pb)/MARGIN_SD)*100),pctB=100-pctA,aFav=pctA>=pctB;
+      var bar=document.querySelector('[data-bar="'+key+'"]');
+      if(bar&&bar.children.length===2){
+        bar.children[0].style.width=pctA+"%";bar.children[1].style.width=pctB+"%";
+        bar.children[0].className=aFav?"fav":"dog";
+        bar.children[1].className=aFav?"dog":"fav";
+      }
+      [[key+":0",pctA,aFav],[key+":1",pctB,!aFav]].forEach(function(w){
+        var e=document.querySelector('[data-wp="'+w[0]+'"]');
+        if(e){e.textContent=w[1]+"%";e.className="wp "+(w[2]?"fav":"dog")}
+      });
+      el.innerHTML='<span>projected</span><span class="pc">'+fx(pa)+' – '+fx(pb)+'</span>';
     });
   }).catch(function(){});
 }
