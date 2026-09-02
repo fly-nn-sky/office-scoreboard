@@ -88,7 +88,9 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .mside{min-width:0}
 .mtop{display:flex;align-items:center;gap:8px;min-width:0}
 .mav{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--line);flex:none}
-.mnm{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.mid{flex:1;min-width:0}
+.mhd{font-size:11px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mnm{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mpt{font-family:var(--cond);font-weight:700;font-size:22px;line-height:1;flex:none;font-variant-numeric:tabular-nums}
 .mpt.none{color:var(--faint)}
 .mbar{height:4px;border-radius:2px;background:var(--line);margin:8px 0 5px;display:flex;overflow:visible}
@@ -101,7 +103,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .mvs{font-family:var(--cond);font-weight:700;font-size:12px;color:var(--faint);letter-spacing:.08em;padding-top:6px;flex:none}
 .mside.lose .mnm,.mside.lose .mpt{color:var(--muted)}
 .mside.right .mtop{flex-direction:row-reverse}
-.mside.right .mnm{text-align:right}
+.mside.right .mid{text-align:right}
 .mside.right .mbar{justify-content:flex-end}
 .mside.right .mft{flex-direction:row-reverse}
 .mside.right .mproj{margin-left:0;margin-right:auto}
@@ -425,13 +427,15 @@ function gameCard(C,g,big){
     var share=t>0?(s.pts/t*100):50;
     var lead=t>0&&b?(mine.pts>=other.pts):true;
     return '<div class="mside'+(right?" right":"")+(lose?" lose":"")+'">'
-      +'<div class="mtop">'+img(tm.avatar,"mav")+'<div class="mnm">'+esc(tm.name)+'</div>'
+      +'<div class="mtop">'+img(tm.avatar,"mav")
+      +'<div class="mid"><div class="mhd">'+(tm.handle?"@"+esc(tm.handle):"&nbsp;")+'</div>'
+      +'<div class="mnm">'+esc(tm.name)+'</div></div>'
       +'<div class="mpt'+(t?"":" none")+'">'+(t?fx(s.pts):"–")+'</div></div>'
       +'<div class="mbar"'+(pre?' data-mb="'+esc(key)+':'+i+'"':"")+'>'
       +'<i class="'+(pre?"":(lead?"fav":"dog"))+'" style="width:'+(pre?50:share).toFixed(1)+'%"></i></div>'
       +'<div class="mft">'
       +(pre?'<span class="wp" data-wp="'+esc(key)+':'+i+'">–</span>':"")
-      +'<span class="mrec">'+esc(tm.handle)+' · '+rec(tm)+'</span>'
+      +'<span class="mrec">'+rec(tm)+'</span>'
       +'<span class="mproj"'+(pre?' data-pj="'+esc(key)+':'+i+'"':"")+'></span>'
       +'</div></div>';
   }
