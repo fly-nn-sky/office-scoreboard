@@ -92,6 +92,10 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .mside{min-width:0}
 .mtop{display:flex;align-items:center;gap:8px;min-width:0}
 .mav{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--line);flex:none}
+.avw{position:relative;display:inline-block;flex:none;line-height:0}
+.crown{position:absolute;top:-8px;left:50%;width:15px;height:auto;pointer-events:none;transform:translateX(-50%) rotate(-10deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.mside.right .crown,.h2h .t.right .crown{transform:translateX(-50%) rotate(10deg)}
+.h2h .crown{width:24px;top:-13px}
 .mid{flex:1;min-width:0}
 .mhd{font-size:11px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mnm{font-family:var(--cond);font-weight:600;font-size:17px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -292,6 +296,8 @@ function initials(n){
   return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2)).toUpperCase();
 }
 /* teams whose manager never set a Sleeper avatar get initials instead of a blank gap */
+function crown(){return '<svg class="crown" viewBox="0 0 24 18" aria-hidden="true"><path d="M2 6 L6.5 10 L12 2.5 L17.5 10 L22 6 L22 15 L2 15 Z" fill="#e0c264" stroke="#070d1c" stroke-width="1.3" stroke-linejoin="round"/></svg>'}
+function avw(t,cls,win){return '<span class="avw">'+img(tav(t),cls)+(win?crown():"")+'</span>'}
 function tav(t){
   if(t.avatar)return t.avatar;
   var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
@@ -456,10 +462,11 @@ function gameCard(C,g,big){
   function mSide(s,i,right){
     var tm=s.team,mine=i===0?a:b,other=i===0?b:a;
     var lose=t>0&&b&&mine.pts<other.pts;
+    var won=t>0&&b&&mine.pts>other.pts&&S.week<S.liveWeek;
     var share=t>0?(s.pts/t*100):50;
     var lead=t>0&&b?(mine.pts>=other.pts):true;
     return '<div class="mside'+(right?" right":"")+(lose?" lose":"")+'">'
-      +'<div class="mtop">'+img(tav(tm),"mav")
+      +'<div class="mtop">'+avw(tm,"mav",won)
       +'<div class="mid"><div class="mhd">'+(tm.handle?"@"+esc(tm.handle):"&nbsp;")+'</div>'
       +'<div class="mnm">'+esc(tm.name)+'</div></div>'
       +'<div class="mpt'+(t?"":" none")+'">'+(t?fx(s.pts):"–")+'</div></div>'
@@ -507,10 +514,10 @@ function pageMatchup(lg,gid){
   var C=S.L[lg];if(!C)return '<div class="note bad">Unknown league.</div>';
   var g=C.games.filter(function(x){return String(x.id)===String(gid)})[0];
   if(!g)return '<div class="crumb"><a href="#/">← Home</a></div><div class="note">That matchup isn\'t in week '+S.week+'. Use the week arrows or go back.</div>';
-  var a=g.sides[0],b=g.sides[1]||null,lv=live(g);
+  var a=g.sides[0],b=g.sides[1]||null,lv=live(g),fin=tot(g)>0&&S.week<S.liveWeek;
   var slots=(C.league.roster_positions||[]).filter(function(p){return p!=="BN"&&p!=="IR"&&p!=="TAXI"});
   var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / '+esc(C.cfg.name)+' · Week '+S.week+(lv?' · <span style="color:var(--live);font-weight:600">Live</span>':"")+'</div>';
-  h+='<div class="h2h card" style="padding:16px 18px">'+h2hSide(C,a,false,!tot(g))+'<div class="vs">vs</div>'+(b?h2hSide(C,b,true,!tot(g)):"<div></div>")+'</div>';
+  h+='<div class="h2h card" style="padding:16px 18px">'+h2hSide(C,a,false,!tot(g),fin&&b&&a.pts>b.pts)+'<div class="vs">vs</div>'+(b?h2hSide(C,b,true,!tot(g),fin&&b.pts>a.pts):"<div></div>")+'</div>';
   h+='<div class="card"><div class="lineup">';
   slots.forEach(function(pos,i){
     h+=plCell(a,i,pos,b,false)+'<div class="pos">'+esc(pos)+'</div>'+(b?plCell(b,i,pos,a,true):'<div></div>');
@@ -520,7 +527,7 @@ function pageMatchup(lg,gid){
   h+='<div class="two" style="margin-top:16px">'+bench(C,a)+(b?bench(C,b):"")+'</div></div>';
   return h;
 }
-function h2hSide(C,s,right,noPts){var t=s.team;return '<div class="t '+(right?"right":"")+'">'+img(tav(t))+'<div style="min-width:0"><div class="nm"><a href="#/team/'+C.cfg.key+'/'+t.id+'">'+esc(t.name)+'</a></div><div class="hd" style="font-size:12px;color:var(--muted)">'+esc(t.handle)+' · '+rec(t)+' · #'+t.rank+'</div><div class="sc">'+(noPts?"–":fx(s.pts))+'</div></div></div>'}
+function h2hSide(C,s,right,noPts,win){var t=s.team;return '<div class="t '+(right?"right":"")+'">'+avw(t,"",win)+'<div style="min-width:0"><div class="nm"><a href="#/team/'+C.cfg.key+'/'+t.id+'">'+esc(t.name)+'</a></div><div class="hd" style="font-size:12px;color:var(--muted)">'+esc(t.handle)+' · '+rec(t)+' · #'+t.rank+'</div><div class="sc">'+(noPts?"–":fx(s.pts))+'</div></div></div>'}
 function plCell(s,i,pos,other,right){
   var id=s.starters[i],v=(s.sp[i]||0);
   if(!id||id==="0")return '<div class="pl empty '+(right?"right":"")+'"><div class="who"><div class="pn">Empty slot</div></div></div>';
