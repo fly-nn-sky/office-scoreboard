@@ -268,6 +268,20 @@ function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function fx(n){return (Math.round((n||0)*100)/100).toFixed(2)}
 function av(id){return id?CDN+"/avatars/thumbs/"+id:""}
+function initials(n){
+  var w=String(n||"").replace(/[^A-Za-z0-9 _]/g," ").split(/[\s_]+/).filter(Boolean);
+  if(!w.length)return "?";
+  return (w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2)).toUpperCase();
+}
+/* teams whose manager never set a Sleeper avatar get initials instead of a blank gap */
+function tav(t){
+  if(t.avatar)return t.avatar;
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+    +'<rect width="64" height="64" rx="32" fill="#16223f"/>'
+    +'<text x="32" y="42" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif"'
+    +' font-size="27" font-weight="700" fill="#8fa3cf">'+esc(initials(t.name))+'</text></svg>';
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
 function img(src,cls){return '<img class="'+(cls||"")+'" src="'+esc(src)+'" alt="" onerror="this.style.visibility=\'hidden\'">'}
 function say(m){var s=$("status");if(!m){s.hidden=true;return}s.textContent=m;s.hidden=false}
 function rec(t){return t.wins+"-"+t.losses+(t.ties?"-"+t.ties:"")}
@@ -427,7 +441,7 @@ function gameCard(C,g,big){
     var share=t>0?(s.pts/t*100):50;
     var lead=t>0&&b?(mine.pts>=other.pts):true;
     return '<div class="mside'+(right?" right":"")+(lose?" lose":"")+'">'
-      +'<div class="mtop">'+img(tm.avatar,"mav")
+      +'<div class="mtop">'+img(tav(tm),"mav")
       +'<div class="mid"><div class="mhd">'+(tm.handle?"@"+esc(tm.handle):"&nbsp;")+'</div>'
       +'<div class="mnm">'+esc(tm.name)+'</div></div>'
       +'<div class="mpt'+(t?"":" none")+'">'+(t?fx(s.pts):"–")+'</div></div>'
@@ -451,7 +465,7 @@ function standings(C){
   var eff=C.ranked.some(function(t){return t.pp>0});
   var h='<table><thead><tr><th></th><th>Team</th><th class="r">Rec</th><th class="r">PF</th><th class="r">PA</th>'+(eff?'<th class="r">Eff</th>':"")+'</tr></thead><tbody>';
   C.ranked.forEach(function(t){
-    h+='<tr class="row" tabindex="0" data-href="#/team/'+C.cfg.key+'/'+t.id+'"><td class="rk">'+t.rank+'</td><td><div class="tc">'+img(t.avatar)+'<span class="n">'+esc(t.name)+(t.name!==t.handle?'<span class="h">'+esc(t.handle)+'</span>':"")+'</span></div></td><td class="r num">'+rec(t)+'</td><td class="r num">'+fx(t.pf)+'</td><td class="r num dim">'+fx(t.pa)+'</td>'+(eff?'<td class="r num dim">'+(t.pp>0?Math.round(t.pf/t.pp*100)+"%":"—")+'</td>':"")+'</tr>';
+    h+='<tr class="row" tabindex="0" data-href="#/team/'+C.cfg.key+'/'+t.id+'"><td class="rk">'+t.rank+'</td><td><div class="tc">'+img(tav(t))+'<span class="n">'+esc(t.name)+(t.name!==t.handle?'<span class="h">'+esc(t.handle)+'</span>':"")+'</span></div></td><td class="r num">'+rec(t)+'</td><td class="r num">'+fx(t.pf)+'</td><td class="r num dim">'+fx(t.pa)+'</td>'+(eff?'<td class="r num dim">'+(t.pp>0?Math.round(t.pf/t.pp*100)+"%":"—")+'</td>':"")+'</tr>';
   });
   return h+'</tbody></table>';
 }
@@ -461,7 +475,7 @@ function combined(){
   var played=all.some(function(r){return r.t.wins+r.t.losses+r.t.ties>0});
   all.sort(function(x,y){if(played&&y.t.wins!==x.t.wins)return y.t.wins-x.t.wins;return y.t.pf-x.t.pf});
   var h='<div class="combined"><h2>Whole office, one table</h2><div class="card"><table><thead><tr><th data-tip="Overall rank across both leagues, by record then points."><span class="lbl">#</span></th><th data-tip="Team name, with the manager&#39;s Sleeper handle beneath."><span class="lbl">Team</span></th><th data-tip="Which league the team plays in."><span class="lbl">League</span></th><th class="r" data-tip="Wins–losses–ties so far this season."><span class="lbl">Rec</span></th><th class="r" data-tip="Current run of consecutive results. W3 means three straight wins."><span class="lbl">Streak</span></th><th class="r" data-tip="Points For — total points this team has scored."><span class="lbl">PF</span></th><th class="r" data-tip="Points Against — total points their opponents scored on them."><span class="lbl">PA</span></th><th class="r" data-tip="Points For minus Points Against. Positive means they outscore their opponents."><span class="lbl">Diff</span></th><th class="r" data-tip="Lineup efficiency: points scored as a share of the most their roster could have scored. Measures the manager, not the players."><span class="lbl">Eff</span></th><th class="r" data-tip="Adds, drops and trades made this season."><span class="lbl">Moves</span></th></tr></thead><tbody>';
-  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(r.t.avatar)+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r" data-stk="'+r.C.cfg.key+':'+r.t.id+'"><span class="dim">…</span></td><td class="r num">'+fx(r.t.pf)+'</td><td class="r num dim">'+fx(r.t.pa)+'</td><td class="r num '+(r.t.pf-r.t.pa>0?"pos":r.t.pf-r.t.pa<0?"neg":"dim")+'">'+(r.t.pa>0?(r.t.pf-r.t.pa>0?"+":"")+fx(r.t.pf-r.t.pa):'<span class="dim">—</span>')+'</td><td class="r num dim">'+(r.t.pp>0?Math.round(r.t.pf/r.t.pp*100)+"%":"—")+'</td><td class="r num dim">'+(r.t.moves||0)+'</td></tr>'});
+  all.forEach(function(r,i){h+='<tr class="row '+r.C.cfg.cls+'" tabindex="0" data-href="#/team/'+r.C.cfg.key+'/'+r.t.id+'"><td class="rk">'+(i+1)+'</td><td><div class="tc">'+img(tav(r.t))+'<span class="n">'+esc(r.t.name)+'</span></div></td><td><span class="tag">'+r.C.cfg.tag+'</span></td><td class="r num">'+rec(r.t)+'</td><td class="r" data-stk="'+r.C.cfg.key+':'+r.t.id+'"><span class="dim">…</span></td><td class="r num">'+fx(r.t.pf)+'</td><td class="r num dim">'+fx(r.t.pa)+'</td><td class="r num '+(r.t.pf-r.t.pa>0?"pos":r.t.pf-r.t.pa<0?"neg":"dim")+'">'+(r.t.pa>0?(r.t.pf-r.t.pa>0?"+":"")+fx(r.t.pf-r.t.pa):'<span class="dim">—</span>')+'</td><td class="r num dim">'+(r.t.pp>0?Math.round(r.t.pf/r.t.pp*100)+"%":"—")+'</td><td class="r num dim">'+(r.t.moves||0)+'</td></tr>'});
   return h+'</tbody></table></div></div>';
 }
 
@@ -483,7 +497,7 @@ function pageMatchup(lg,gid){
   h+='<div class="two" style="margin-top:16px">'+bench(C,a)+(b?bench(C,b):"")+'</div></div>';
   return h;
 }
-function h2hSide(C,s,right,noPts){var t=s.team;return '<div class="t '+(right?"right":"")+'">'+img(t.avatar)+'<div style="min-width:0"><div class="nm"><a href="#/team/'+C.cfg.key+'/'+t.id+'">'+esc(t.name)+'</a></div><div class="hd" style="font-size:12px;color:var(--muted)">'+esc(t.handle)+' · '+rec(t)+' · #'+t.rank+'</div><div class="sc">'+(noPts?"–":fx(s.pts))+'</div></div></div>'}
+function h2hSide(C,s,right,noPts){var t=s.team;return '<div class="t '+(right?"right":"")+'">'+img(tav(t))+'<div style="min-width:0"><div class="nm"><a href="#/team/'+C.cfg.key+'/'+t.id+'">'+esc(t.name)+'</a></div><div class="hd" style="font-size:12px;color:var(--muted)">'+esc(t.handle)+' · '+rec(t)+' · #'+t.rank+'</div><div class="sc">'+(noPts?"–":fx(s.pts))+'</div></div></div>'}
 function plCell(s,i,pos,other,right){
   var id=s.starters[i],v=(s.sp[i]||0);
   if(!id||id==="0")return '<div class="pl empty '+(right?"right":"")+'"><div class="who"><div class="pn">Empty slot</div></div></div>';
@@ -504,7 +518,7 @@ function pageTeam(lg,rid){
   if(!t){$("view").innerHTML='<div class="note bad">Unknown team.</div>';return}
   var cur=null;C.games.forEach(function(g){g.sides.forEach(function(s){if(String(s.team.id)===String(rid))cur=s})});
   var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / '+esc(C.cfg.name)+'</div>';
-  h+='<div class="pagehead">'+img(t.avatar)+'<div><h2>'+esc(t.name)+'</h2><div class="hd">'+esc(t.handle)+' · <span class="tag">'+C.cfg.tag+'</span></div></div>';
+  h+='<div class="pagehead">'+img(tav(t))+'<div><h2>'+esc(t.name)+'</h2><div class="hd">'+esc(t.handle)+' · <span class="tag">'+C.cfg.tag+'</span></div></div>';
   h+='<div class="stats"><div class="stat"><b>#'+t.rank+'</b><span>of '+C.ranked.length+'</span></div><div class="stat w"><b>'+rec(t)+'</b><span>record</span></div><div class="stat"><b>'+fx(t.pf)+'</b><span>points for</span></div><div class="stat"><b>'+fx(t.pa)+'</b><span>against</span></div>'+(t.pp>0?'<div class="stat"><b>'+Math.round(t.pf/t.pp*100)+'%</b><span>lineup efficiency</span></div>':"")+'</div></div>';
   h+='<div class="two" style="margin-top:0"><div class="col">';
   h+='<div class="sec"><h3>Roster<span>'+(cur?"week "+S.week+" points":"")+'</span></h3><div class="card roster">'+roster(C,t,cur)+'</div></div></div>';
