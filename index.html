@@ -89,13 +89,14 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .game:hover{border-color:var(--line-2);background:var(--card-2);border-left-color:var(--acc)}
 .game.live{border-left-color:var(--live)}
 .mrow{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
-.mside{display:flex;align-items:center;gap:11px;min-width:0;container-type:inline-size}
-.mside.right{flex-direction:row-reverse}
-.mbody{flex:1;min-width:0}
-.mside.right .mbody{text-align:right}
+.mside{min-width:0;container-type:inline-size}
+.mtop{display:flex;align-items:center;gap:11px;min-width:0}
+.mid{flex:1;min-width:0}
+.mside.right .mtop{flex-direction:row-reverse}
+.mside.right .mid{text-align:right}
 .mav{width:52px;height:52px;border-radius:50%;object-fit:cover;background:var(--line);flex:none}
-@container (min-width:245px){.mav{width:72px;height:72px}.crown{width:30px;top:-15px}}
-@container (min-width:315px){.mav{width:96px;height:96px}.crown{width:36px;top:-18px}}
+@container (min-width:215px){.mav{width:60px;height:60px}.crown{width:27px;top:-13px}}
+@container (min-width:270px){.mav{width:68px;height:68px}.crown{width:29px;top:-14px}}
 .avw{position:relative;display:inline-block;flex:none;line-height:0}
 .crown{position:absolute;top:-13px;left:50%;width:26px;height:auto;pointer-events:none;transform:translateX(-50%) rotate(-10deg);filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
 .mside.right .crown,.h2h .t.right .crown{transform:translateX(-50%) rotate(10deg)}
@@ -295,7 +296,10 @@ var store = {
 function $(id){return document.getElementById(id)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function fx(n){return (Math.round((n||0)*100)/100).toFixed(2)}
-function av(id){return id?CDN+"/avatars/thumbs/"+id:""}
+/* /avatars/thumbs is 80x80 and goes soft above ~40px, especially on a
+   retina screen; the full-size endpoint is around 500x500 for a similar
+   file size, so use it everywhere and let the browser downscale. */
+function av(id){return id?CDN+"/avatars/"+id:""}
 function initials(n){
   var w=String(n||"").replace(/[^A-Za-z0-9 _]/g," ").split(/[\s_]+/).filter(Boolean);
   if(!w.length)return "?";
@@ -472,18 +476,18 @@ function gameCard(C,g,big){
     var share=t>0?(s.pts/t*100):50;
     var lead=t>0&&b?(mine.pts>=other.pts):true;
     return '<div class="mside'+(right?" right":"")+(lose?" lose":"")+'">'
-      +avw(tm,"mav",won)
-      +'<div class="mbody">'
+      +'<div class="mtop">'+avw(tm,"mav",won)
+      +'<div class="mid">'
       +'<div class="mhd">'+(tm.handle?"@"+esc(tm.handle):"&nbsp;")+'</div>'
       +'<div class="mnm">'+esc(tm.name)+'</div>'
-      +'<div class="mpt'+(t?"":" none")+'">'+(t?fx(s.pts):"–")+'</div>'
+      +'<div class="mpt'+(t?"":" none")+'">'+(t?fx(s.pts):"–")+'</div></div></div>'
       +'<div class="mbar"'+(pre?' data-mb="'+esc(key)+':'+i+'"':"")+'>'
       +'<i class="'+(pre?"":(lead?"fav":"dog"))+'" style="width:'+(pre?50:share).toFixed(1)+'%"></i></div>'
       +'<div class="mft">'
       +(pre?'<span class="wp" data-wp="'+esc(key)+':'+i+'">–</span>':"")
       +'<span class="mrec">'+rec(tm)+'</span>'
       +'<span class="mproj"'+(pre?' data-pj="'+esc(key)+':'+i+'"':"")+'></span>'
-      +'</div></div></div>';
+      +'</div></div>';
   }
   var h='<a class="game '+C.cfg.cls+(lv?" live":"")+(big?" big":"")+'" href="#/matchup/'+C.cfg.key+'/'+esc(g.id)+'">';
   h+='<div class="mrow"'+(pre?' data-odds="'+esc(key)+'"':"")+'>';
