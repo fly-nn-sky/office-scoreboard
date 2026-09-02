@@ -21,11 +21,11 @@
   --fields-soft:#0a3346;
   --nerds:#ff9f1c;
   --nerds-soft:#3d2a0e;
-  --win:#2ff5a8;
-  --loss:#ff4d6d;
+  --win:#3ed99b;
+  --loss:#f26580;
   --live:#ffe066;
-  --win-glow:rgba(47,245,168,.85);
-  --loss-glow:rgba(255,77,109,.8);
+  --win-glow:rgba(62,217,155,.32);
+  --loss-glow:rgba(242,101,128,.28);
   --glow-a:rgba(34,211,238,.30);
   --glow-b:rgba(255,159,28,.28);
   --cond:"Barlow Condensed","Oswald","Arial Narrow",system-ui,sans-serif;
@@ -99,11 +99,11 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .game.live .bar i{background:var(--live)}
 .bar.wbar{display:flex;gap:3px;background:transparent;overflow:visible;height:5px;margin:9px 0 5px}
 .bar.wbar i{background:var(--line-2);transition:width .35s ease;border-radius:3px}
-.bar.wbar i.fav{background:var(--win);box-shadow:0 0 6px var(--win-glow),0 0 16px var(--win-glow)}
-.bar.wbar i.dog{background:var(--loss);box-shadow:0 0 6px var(--loss-glow),0 0 14px var(--loss-glow)}
+.bar.wbar i.fav{background:var(--win);box-shadow:0 0 12px var(--win-glow)}
+.bar.wbar i.dog{background:var(--loss);box-shadow:0 0 11px var(--loss-glow)}
 .wp{font-weight:700;font-variant-numeric:tabular-nums}
-.wp.fav{color:var(--win);text-shadow:0 0 9px var(--win-glow)}
-.wp.dog{color:var(--loss);text-shadow:0 0 9px var(--loss-glow)}
+.wp.fav{color:var(--win)}
+.wp.dog{color:var(--loss)}
 .gfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px}
 .gfoot.odds{margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
 .gfoot.odds b{color:var(--acc);font-weight:600}
