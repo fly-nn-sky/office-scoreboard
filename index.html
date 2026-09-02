@@ -300,6 +300,14 @@ function fx(n){return (Math.round((n||0)*100)/100).toFixed(2)}
    retina screen; the full-size endpoint is around 500x500 for a similar
    file size, so use it everywhere and let the browser downscale. */
 function av(id){return id?CDN+"/avatars/"+id:""}
+/* A league-specific team avatar is stored separately from the account one, as a
+   full URL in metadata.avatar, and takes precedence. Only trust Sleeper's own
+   CDN here, since this is a URL arriving from an API response. */
+function uAvatar(u){
+  var m=u.metadata&&u.metadata.avatar;
+  if(m&&/^https:\/\/sleepercdn\.com\//.test(m))return m;
+  return av(u.avatar);
+}
 function initials(n){
   var w=String(n||"").replace(/[^A-Za-z0-9 _]/g," ").split(/[\s_]+/).filter(Boolean);
   if(!w.length)return "?";
@@ -364,7 +372,7 @@ function loadLeague(cfg,league,week){
       teams[ro.roster_id]={
         id:ro.roster_id,lg:cfg.key,
         name:(u.metadata&&u.metadata.team_name)||u.display_name||("Roster "+ro.roster_id),
-        handle:u.display_name||"",avatar:av(u.avatar),
+        handle:u.display_name||"",avatar:uAvatar(u),
         wins:st.wins||0,losses:st.losses||0,ties:st.ties||0,
         pf:(st.fpts||0)+(st.fpts_decimal||0)/100,pa:(st.fpts_against||0)+(st.fpts_against_decimal||0)/100,
         pp:(st.ppts||0)+(st.ppts_decimal||0)/100,
