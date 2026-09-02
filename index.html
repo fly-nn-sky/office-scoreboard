@@ -32,7 +32,7 @@ html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;background-image:radial-gradient(ellipse at 20% -10%,rgba(79,157,105,.14),transparent 60%),repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 6px);min-height:100vh}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;color:inherit;cursor:pointer}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 70px}
+.wrap{max-width:none;margin:0 auto;padding:0 28px 70px}
 
 /* ---- top bar ---- */
 .top{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:20px 0 14px;border-bottom:1px solid var(--line-2)}
@@ -62,8 +62,9 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 7px;border-radius:3px;background:var(--acc-soft);color:var(--acc);flex:none;line-height:1.5}
 
 /* ---- layout ---- */
-.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:22px}
-@media (max-width:880px){.two{grid-template-columns:1fr}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:56px;margin-top:22px;position:relative}
+.two::before{content:"";position:absolute;top:-4px;bottom:-4px;left:50%;width:5px;margin-left:-2.5px;border-radius:3px;background:linear-gradient(180deg,var(--fields) 0%,var(--fields) 14%,var(--line-2) 50%,var(--nerds) 86%,var(--nerds) 100%);box-shadow:0 0 22px rgba(95,191,133,.30),0 0 22px rgba(232,163,61,.22);pointer-events:none}
+@media (max-width:880px){.two{grid-template-columns:1fr;gap:24px}.two::before{display:none}}
 .col{min-width:0}
 .lhead{display:flex;align-items:center;gap:12px;padding-bottom:10px;margin-bottom:12px;border-bottom:3px solid var(--acc)}
 .lhead img{width:38px;height:38px;border-radius:6px;object-fit:cover;background:var(--line)}
@@ -102,7 +103,7 @@ tbody tr:last-child td{border-bottom:0}
 .row{cursor:pointer}
 .row:hover td{background:var(--card-2)}
 .rk{font-family:var(--cond);font-weight:700;font-size:16px;color:var(--faint);width:30px;font-variant-numeric:tabular-nums}
-.tc{display:flex;align-items:center;gap:9px;min-width:0}
+.tc{display:flex;align-items:center;gap:9px;min-width:0;height:38px}
 .tc img{width:24px;height:24px;border-radius:50%;object-fit:cover;background:var(--line);flex:none}
 .tc .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
 .tc .h{font-size:11px;color:var(--muted);display:block;font-weight:400}
@@ -193,10 +194,6 @@ footer{margin-top:44px;font-size:12px;color:var(--faint)}
 <div class="wrap">
   <header class="top">
     <h1>Office scoreboard</h1>
-    <nav class="nav" id="nav">
-      <a href="#/" data-r="home">Home</a>
-      <a href="#/matchups" data-r="matchups">Matchups</a>
-    </nav>
     <div class="tools">
       <div class="weeknav">
         <button id="prevWk" aria-label="Previous week">&#8249;</button>
@@ -352,10 +349,8 @@ function route(){
 function render(){
   if(!S.ready)return;
   var r=route();
-  document.querySelectorAll("#nav a").forEach(function(a){a.classList.toggle("on",a.getAttribute("data-r")===(r.page==="matchup"?"matchups":r.page))});
   var v=$("view");
-  if(r.page==="matchups")v.innerHTML=pageMatchups();
-  else if(r.page==="matchup")v.innerHTML=pageMatchup(r.a,r.b);
+  if(r.page==="matchup")v.innerHTML=pageMatchup(r.a,r.b);
   else if(r.page==="team")pageTeam(r.a,r.b);
   else v.innerHTML=pageHome();
   $("wkNum").textContent="Week "+S.week;
@@ -374,7 +369,7 @@ function pageHome(){
 function column(C){
   var cfg=C.cfg,L=C.league;
   var h='<div class="col '+cfg.cls+'"><div class="lhead">'+(L.avatar?img(av(L.avatar)):"")+'<h2>'+esc(cfg.name)+'</h2><div class="meta">'+leagueMeta(C)+'</div></div>';
-  h+='<div class="sec"><h3>Week '+S.week+'<span>'+(C.games.length?'<a href="#/matchups">all matchups</a>':"")+'</span></h3>';
+  h+='<div class="sec"><h3>Week '+S.week+'<span>'+(C.games.length?C.games.length+" matchups":"")+'</span></h3>';
   if(!C.games.length)h+='<div class="note">'+emptyMsg(C)+'</div>';
   else C.games.forEach(function(g){h+=gameCard(C,g,false)});
   h+='</div>';
@@ -443,25 +438,14 @@ function combined(){
   return h+'</div></div></div>';
 }
 
-function pageMatchups(){
-  var h="";
-  ["a","b"].forEach(function(k){
-    var C=S.L[k];
-    h+='<div class="'+C.cfg.cls+'" style="margin-top:22px"><div class="lhead">'+(C.league.avatar?img(av(C.league.avatar)):"")+'<h2>'+esc(C.cfg.name)+'</h2><div class="meta">Week '+S.week+'<b>'+(C.games.length?C.games.length+" matchups":"")+'</b></div></div>';
-    if(!C.games.length)h+='<div class="note">'+emptyMsg(C)+'</div>';
-    else{h+='<div class="list">';C.games.forEach(function(g){h+=gameCard(C,g,true)});h+='</div>'}
-    h+='</div>';
-  });
-  return h;
-}
 
 function pageMatchup(lg,gid){
   var C=S.L[lg];if(!C)return '<div class="note bad">Unknown league.</div>';
   var g=C.games.filter(function(x){return String(x.id)===String(gid)})[0];
-  if(!g)return '<div class="crumb"><a href="#/matchups">← Matchups</a></div><div class="note">That matchup isn\'t in week '+S.week+'. Use the week arrows or go back.</div>';
+  if(!g)return '<div class="crumb"><a href="#/">← Home</a></div><div class="note">That matchup isn\'t in week '+S.week+'. Use the week arrows or go back.</div>';
   var a=g.sides[0],b=g.sides[1]||null,lv=live(g);
   var slots=(C.league.roster_positions||[]).filter(function(p){return p!=="BN"&&p!=="IR"&&p!=="TAXI"});
-  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / <a href="#/matchups">Matchups</a> / '+esc(C.cfg.name)+' · Week '+S.week+(lv?' · <span style="color:var(--live);font-weight:600">Live</span>':"")+'</div>';
+  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / '+esc(C.cfg.name)+' · Week '+S.week+(lv?' · <span style="color:var(--live);font-weight:600">Live</span>':"")+'</div>';
   h+='<div class="h2h card" style="padding:16px 18px">'+h2hSide(C,a,false)+'<div class="vs">vs</div>'+(b?h2hSide(C,b,true):"<div></div>")+'</div>';
   h+='<div class="card"><div class="lineup">';
   slots.forEach(function(pos,i){
