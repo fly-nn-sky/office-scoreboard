@@ -112,6 +112,7 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .mside.right .mft{flex-direction:row-reverse}
 .mside.right .mproj{margin-left:0;margin-right:auto}
 .gfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px}
+.gfoot .fin{color:var(--muted);font-weight:700;letter-spacing:.05em}
 .gfoot.odds{margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
 .gfoot.odds b{color:var(--acc);font-weight:600}
 .gfoot.odds .pc{font-variant-numeric:tabular-nums}
@@ -474,7 +475,12 @@ function gameCard(C,g,big){
   h+='<div class="mrow"'+(pre?' data-odds="'+esc(key)+'"':"")+'>';
   h+=mSide(a,0,false)+'<div class="mvs">VS</div>'+(b?mSide(b,1,true):'<div></div>');
   h+='</div>';
-  if(t>0&&b)h+='<div class="gfoot"><span>'+esc(a.team.name)+' leads by '+fx(a.pts-b.pts)+'</span><span>'+fx(t)+' combined</span></div>';
+  if(t>0&&b){
+    /* sides are sorted by points, so a is the leader; past weeks are settled, the current one may still be running */
+    var d=a.pts-b.pts,fin=S.week<S.liveWeek;
+    var say=d===0?"Tied":esc(a.team.name)+(fin?" won by ":" leads by ")+fx(d);
+    h+='<div class="gfoot"><span>'+(fin?'<b class="fin">FINAL</b> ':"")+say+'</span><span>'+fx(t)+' combined</span></div>';
+  }
   return h+'</a>';
 }
 function standings(C){
