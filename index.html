@@ -92,6 +92,9 @@ button{font-family:inherit;color:inherit;cursor:pointer}
 .bar i{display:block;height:100%;background:var(--acc)}
 .game.live .bar i{background:var(--live)}
 .gfoot{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:4px}
+.gfoot.odds{margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
+.gfoot.odds b{color:var(--acc);font-weight:600}
+.gfoot.odds .pc{font-variant-numeric:tabular-nums}
 .game.big .side .nm{font-size:22px}.game.big .side .pt{font-size:32px}.game.big .side img{width:34px;height:34px}
 
 /* ---- tables ---- */
@@ -259,7 +262,7 @@ function isDef(id){return /^[A-Z]{2,3}$/.test(String(id))}
 function pImg(id){return isDef(id)?CDN+"/images/team_logos/nfl/"+String(id).toLowerCase()+".png":CDN+"/content/nfl/players/thumb/"+id+".jpg"}
 
 /* ---- state ---- */
-var S={season:null,week:null,liveWeek:null,L:{},players:{},sched:{a:{},b:{}},timer:null,ready:false};
+var S={season:null,week:null,liveWeek:null,L:{},players:{},sched:{a:{},b:{}},proj:{},timer:null,ready:false};
 
 /* ---- resolve the leagues ---- */
 function norm(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
@@ -364,7 +367,7 @@ function render(){
   var v=$("view");
   if(r.page==="matchup")v.innerHTML=pageMatchup(r.a,r.b);
   else if(r.page==="team")pageTeam(r.a,r.b);
-  else{v.innerHTML=pageHome();fillStreaks()}
+  else{v.innerHTML=pageHome();fillStreaks();fillOdds()}
   $("wkNum").textContent="Week "+S.week;
   $("prevWk").disabled=S.week<=1;$("nextWk").disabled=S.week>=18;
   var isLive=["a","b"].some(function(k){return S.L[k]&&S.L[k].games.some(live)});
@@ -407,6 +410,7 @@ function gameCard(C,g,big){
   h+=sideRow(a,t>0&&b&&a.pts<b.pts?"lose":"");
   h+='<div class="bar"><i style="width:'+sh.toFixed(1)+'%"></i></div>';
   if(b)h+=sideRow(b,t>0&&b.pts<a.pts?"lose":"");
+  if(!t&&b)h+='<div class="gfoot odds" data-odds="'+C.cfg.key+':'+esc(g.id)+'"></div>';
   if(t>0&&b)h+='<div class="gfoot"><span>'+esc(a.team.name)+' leads by '+fx(a.pts-b.pts)+'</span><span>'+fx(t)+' combined</span></div>';
   return h+'</a>';
 }
@@ -487,6 +491,44 @@ function roster(C,t,cur){
   return h;
 }
 function pRow(p,slot,v,dim){return '<div class="pl">'+img(pImg(p))+'<div class="who"><div class="pn">'+esc(pName(p))+'</div><div class="pm">'+pMeta(p)+'</div></div><span class="pos-'+esc(slot)+'" style="font-family:var(--cond);font-weight:700;font-size:12px;color:var(--faint);margin-left:auto">'+esc(slot)+'</span>'+(v==null?"":'<div class="pp '+(dim?"dim":"")+'" style="margin-left:14px;min-width:52px;text-align:right">'+fx(v)+'</div>')+'</div>'}
+function ncdf(z){
+  var t=1/(1+0.2316419*Math.abs(z)),d=0.3989422804014327*Math.exp(-z*z/2);
+  var pr=d*t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  return z>0?1-pr:pr;
+}
+function scoreField(C){
+  var r=(C.league.scoring_settings||{}).rec;
+  return r===1?"pts_ppr":r===0.5?"pts_half_ppr":"pts_std";
+}
+function projTotal(side,f){
+  var m=S.proj[S.week]||{},n=0;
+  (side.starters||[]).forEach(function(p){if(!p||p==="0")return;var e=m[p];if(e&&e[f]!=null)n+=e[f]});
+  return n;
+}
+function loadProj(w){
+  if(S.proj[w])return Promise.resolve();
+  return api("/projections/nfl/regular/"+S.season+"/"+w).then(function(r){S.proj[w]=r||{}});
+}
+/* spread of a head-to-head margin, in fantasy points. two team scores of
+   roughly 27 pt sd each give a margin sd near 38. */
+var MARGIN_SD=38;
+function fillOdds(){
+  if(!document.querySelector("[data-odds]"))return;
+  loadProj(S.week).then(function(){
+    document.querySelectorAll("[data-odds]").forEach(function(el){
+      var q=el.getAttribute("data-odds").split(":"),C=S.L[q[0]];
+      if(!C)return;
+      var g=C.games.filter(function(x){return String(x.id)===q[1]})[0];
+      if(!g||!g.sides[1])return;
+      var f=scoreField(C),pa=projTotal(g.sides[0],f),pb=projTotal(g.sides[1],f);
+      if(!(pa>0&&pb>0))return;
+      var pr=ncdf((pa-pb)/MARGIN_SD),fav=pr>=0.5?g.sides[0]:g.sides[1];
+      var pct=Math.round((pr>=0.5?pr:1-pr)*100);
+      el.innerHTML='<span><b>'+esc(fav.team.name)+'</b> '+pct+'% to win</span>'
+                  +'<span class="pc">proj '+fx(pa)+' – '+fx(pb)+'</span>';
+    });
+  }).catch(function(){});
+}
 function streakOf(C,t){
   var end=(C.league.settings&&C.league.settings.playoff_week_start)||15,k=C.cfg.key,res=[];
   for(var w=1;w<end;w++){
