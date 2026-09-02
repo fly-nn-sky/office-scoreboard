@@ -465,7 +465,7 @@ function standings(C){
   var eff=C.ranked.some(function(t){return t.pp>0});
   var h='<table><thead><tr><th></th><th>Team</th><th class="r">Rec</th><th class="r">PF</th><th class="r">PA</th>'+(eff?'<th class="r">Eff</th>':"")+'</tr></thead><tbody>';
   C.ranked.forEach(function(t){
-    h+='<tr class="row" tabindex="0" data-href="#/team/'+C.cfg.key+'/'+t.id+'"><td class="rk">'+t.rank+'</td><td><div class="tc">'+img(tav(t))+'<span class="n">'+esc(t.name)+(t.name!==t.handle?'<span class="h">'+esc(t.handle)+'</span>':"")+'</span></div></td><td class="r num">'+rec(t)+'</td><td class="r num">'+fx(t.pf)+'</td><td class="r num dim">'+fx(t.pa)+'</td>'+(eff?'<td class="r num dim">'+(t.pp>0?Math.round(t.pf/t.pp*100)+"%":"—")+'</td>':"")+'</tr>';
+    h+='<tr class="row" tabindex="0" data-href="#/team/'+C.cfg.key+'/'+t.id+'"><td class="rk">'+t.rank+'</td><td><div class="tc">'+img(tav(t))+'<span class="n">'+esc(t.name)+(t.handle?'<span class="h">@'+esc(t.handle)+'</span>':"")+'</span></div></td><td class="r num">'+rec(t)+'</td><td class="r num">'+fx(t.pf)+'</td><td class="r num dim">'+fx(t.pa)+'</td>'+(eff?'<td class="r num dim">'+(t.pp>0?Math.round(t.pf/t.pp*100)+"%":"—")+'</td>':"")+'</tr>';
   });
   return h+'</tbody></table>';
 }
