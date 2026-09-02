@@ -222,8 +222,8 @@ footer{margin-top:44px;font-size:12px;color:var(--faint)}
 
 /* =================== the two leagues (fixed) =================== */
 var LEAGUES = {
-  a: { key:"a", user:"skyflynn",   name:"Team Fields",     tag:"FIELDS", cls:"lg-a", id:"" },
-  b: { key:"b", user:"kingstoner", name:"NewFields Nerds", tag:"NERDS",  cls:"lg-b", id:"" }
+  a: { key:"a", user:"skyflynn",   name:"Team Fields", tag:"FIELDS", cls:"lg-a", id:"1398770989822648320" },
+  b: { key:"b", user:"kingstoner", name:"The Nerds",   tag:"NERDS",  cls:"lg-b", id:"1389358320728416256" }
 };
 /* If you ever want to pin them by ID instead of name, paste the league IDs into id:"" above. */
 
@@ -268,7 +268,7 @@ function resolve(cfg){
     return leaguesFor(cfg.user,S.season-1).then(function(old){
       var h2=old.filter(function(l){return norm(l.name)===norm(cfg.name)})[0];
       if(h2)return h2;
-      throw new Error('Could not find "'+cfg.name+'" in '+cfg.user+"'s leagues. Found: "+ls.concat(old).map(function(l){return l.name}).join(", "));
+      throw new Error("Could not find the league for "+cfg.user+".");
     });
   });
 }
@@ -373,7 +373,7 @@ function pageHome(){
 }
 function column(C){
   var cfg=C.cfg,L=C.league;
-  var h='<div class="col '+cfg.cls+'"><div class="lhead">'+(L.avatar?img(av(L.avatar)):"")+'<h2>'+esc(L.name)+'</h2><div class="meta">'+leagueMeta(C)+'</div></div>';
+  var h='<div class="col '+cfg.cls+'"><div class="lhead">'+(L.avatar?img(av(L.avatar)):"")+'<h2>'+esc(cfg.name)+'</h2><div class="meta">'+leagueMeta(C)+'</div></div>';
   h+='<div class="sec"><h3>Week '+S.week+'<span>'+(C.games.length?'<a href="#/matchups">all matchups</a>':"")+'</span></h3>';
   if(!C.games.length)h+='<div class="note">'+emptyMsg(C)+'</div>';
   else C.games.forEach(function(g){h+=gameCard(C,g,false)});
@@ -447,7 +447,7 @@ function pageMatchups(){
   var h="";
   ["a","b"].forEach(function(k){
     var C=S.L[k];
-    h+='<div class="'+C.cfg.cls+'" style="margin-top:22px"><div class="lhead">'+(C.league.avatar?img(av(C.league.avatar)):"")+'<h2>'+esc(C.league.name)+'</h2><div class="meta">Week '+S.week+'<b>'+(C.games.length?C.games.length+" matchups":"")+'</b></div></div>';
+    h+='<div class="'+C.cfg.cls+'" style="margin-top:22px"><div class="lhead">'+(C.league.avatar?img(av(C.league.avatar)):"")+'<h2>'+esc(C.cfg.name)+'</h2><div class="meta">Week '+S.week+'<b>'+(C.games.length?C.games.length+" matchups":"")+'</b></div></div>';
     if(!C.games.length)h+='<div class="note">'+emptyMsg(C)+'</div>';
     else{h+='<div class="list">';C.games.forEach(function(g){h+=gameCard(C,g,true)});h+='</div>'}
     h+='</div>';
@@ -461,7 +461,7 @@ function pageMatchup(lg,gid){
   if(!g)return '<div class="crumb"><a href="#/matchups">← Matchups</a></div><div class="note">That matchup isn\'t in week '+S.week+'. Use the week arrows or go back.</div>';
   var a=g.sides[0],b=g.sides[1]||null,lv=live(g);
   var slots=(C.league.roster_positions||[]).filter(function(p){return p!=="BN"&&p!=="IR"&&p!=="TAXI"});
-  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / <a href="#/matchups">Matchups</a> / '+esc(C.league.name)+' · Week '+S.week+(lv?' · <span style="color:var(--live);font-weight:600">Live</span>':"")+'</div>';
+  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / <a href="#/matchups">Matchups</a> / '+esc(C.cfg.name)+' · Week '+S.week+(lv?' · <span style="color:var(--live);font-weight:600">Live</span>':"")+'</div>';
   h+='<div class="h2h card" style="padding:16px 18px">'+h2hSide(C,a,false)+'<div class="vs">vs</div>'+(b?h2hSide(C,b,true):"<div></div>")+'</div>';
   h+='<div class="card"><div class="lineup">';
   slots.forEach(function(pos,i){
@@ -492,7 +492,7 @@ function pageTeam(lg,rid){
   var C=S.L[lg],t=C&&C.teams[rid];
   if(!t){$("view").innerHTML='<div class="note bad">Unknown team.</div>';return}
   var cur=null;C.games.forEach(function(g){g.sides.forEach(function(s){if(String(s.team.id)===String(rid))cur=s})});
-  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / '+esc(C.league.name)+'</div>';
+  var h='<div class="'+C.cfg.cls+'"><div class="crumb"><a href="#/">Home</a> / '+esc(C.cfg.name)+'</div>';
   h+='<div class="pagehead">'+img(t.avatar)+'<div><h2>'+esc(t.name)+'</h2><div class="hd">'+esc(t.handle)+' · <span class="tag">'+C.cfg.tag+'</span></div></div>';
   h+='<div class="stats"><div class="stat"><b>#'+t.rank+'</b><span>of '+C.ranked.length+'</span></div><div class="stat w"><b>'+rec(t)+'</b><span>record</span></div><div class="stat"><b>'+fx(t.pf)+'</b><span>points for</span></div><div class="stat"><b>'+fx(t.pa)+'</b><span>against</span></div>'+(t.pp>0?'<div class="stat"><b>'+Math.round(t.pf/t.pp*100)+'%</b><span>lineup efficiency</span></div>':"")+'</div></div>';
   h+='<div class="two" style="margin-top:0"><div class="col">';
