@@ -724,6 +724,14 @@ function refresh(){
   }).catch(fail);
 }
 function tick(){clearInterval(S.timer);S.timer=setInterval(function(){if(!document.hidden)refresh()},60000)}
+/* the interval skips while the tab is hidden, so a backgrounded tab can sit on
+   stale data for up to a minute after you come back. refresh on return instead,
+   rate-limited so flicking between tabs does not hammer the API. */
+var lastSeen=Date.now();
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden){lastSeen=Date.now();return}
+  if(S.ready&&Date.now()-lastSeen>15000)refresh();
+});
 $("refresh").addEventListener("click",function(){say("Refreshing…");refresh().then(function(){setTimeout(function(){say("")},500)})});
 $("prevWk").addEventListener("click",function(){if(S.week>1){S.week--;refresh()}});
 $("nextWk").addEventListener("click",function(){if(S.week<18){S.week++;refresh()}});
