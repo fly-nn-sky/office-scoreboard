@@ -509,18 +509,25 @@ function scoreField(C){
   var r=(C.league.scoring_settings||{}).rec;
   return r===1?"pts_ppr":r===0.5?"pts_half_ppr":"pts_std";
 }
-function projTotal(side,f){
-  var m=S.proj[S.week]||{},n=0;
-  (side.starters||[]).forEach(function(p){if(!p||p==="0")return;var e=m[p];if(e&&e[f]!=null)n+=e[f]});
+function projTotal(C,side){
+  var m=S.proj[S.week]||{},ss=C.league.scoring_settings,f=scoreField(C),n=0;
+  (side.starters||[]).forEach(function(p){
+    if(!p||p==="0")return;
+    var e=m[p];if(!e)return;
+    if(ss){for(var k in ss){var w=ss[k];if(typeof w==="number"&&typeof e[k]==="number")n+=e[k]*w}}
+    else if(typeof e[f]==="number")n+=e[f];
+  });
   return n;
 }
 function loadProj(w){
   if(S.proj[w])return Promise.resolve();
   return api("/projections/nfl/regular/"+S.season+"/"+w).then(function(r){S.proj[w]=r||{}});
 }
-/* spread of a head-to-head margin, in fantasy points. two team scores of
-   roughly 27 pt sd each give a margin sd near 38. */
-var MARGIN_SD=38;
+/* Spread of a head-to-head margin, in fantasy points. Calibrated against
+   Sleeper's own published odds: their app showed 62% on a 17.66 pt
+   projected margin, which implies a margin sd near 58. Keeping this in
+   step with the app matters because everyone can compare the two. */
+var MARGIN_SD=58;
 function fillOdds(){
   if(!document.querySelector("[data-odds]"))return;
   loadProj(S.week).then(function(){
@@ -529,7 +536,7 @@ function fillOdds(){
       if(!C)return;
       var g=C.games.filter(function(x){return String(x.id)===q[1]})[0];
       if(!g||!g.sides[1])return;
-      var f=scoreField(C),pa=projTotal(g.sides[0],f),pb=projTotal(g.sides[1],f);
+      var pa=projTotal(C,g.sides[0]),pb=projTotal(C,g.sides[1]);
       if(!(pa>0&&pb>0))return;
       var pctA=Math.round(ncdf((pa-pb)/MARGIN_SD)*100),pctB=100-pctA,aFav=pctA>=pctB;
       var bar=document.querySelector('[data-bar="'+key+'"]');
